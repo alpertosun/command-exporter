@@ -1,13 +1,10 @@
 ## Command Exporter
-
 ---
 
 Command exporter runs commands with "name" parameters in shell.
 
 ### Command metrics example
-
 ---
-
 http://127.0.0.1:9860/commands?target=any command name here
 
 
