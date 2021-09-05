@@ -42,7 +42,7 @@ func serverMetrics(listenAddress, metricsPath string) error {
 
 func commandsHandler(w http.ResponseWriter, r *http.Request) {
 
-	commandName := r.URL.Query().Get("name")
+	commandName := r.URL.Query().Get("target")
 	var commandArgs []string
 	var stdout, stderr string
 	var exit int
@@ -67,29 +67,36 @@ func commandsHandler(w http.ResponseWriter, r *http.Request) {
 	stderr = trimStrings(stderr) + "..."
 
 	commandErrors := prometheus.NewCounter(prometheus.CounterOpts{
-		Subsystem:   commandName,
+		Subsystem:   commandName + "_" + strings.Join(commandArgs, "_"),
 		Name:        "command_errors_total",
 		ConstLabels: prometheus.Labels{"command": commandName, "args": strings.Join(commandArgs, " "), "stdout": stdout, "stderr": stderr},
 		Help:        "number of total errors on commands.",
 	})
 	commandDuration := prometheus.NewGauge(prometheus.GaugeOpts{
-		Subsystem:   commandName,
+		Subsystem:   commandName + "_" + strings.Join(commandArgs, "_"),
 		Name:        "command_processing_duration_seconds",
 		Help:        "number of total duration of commands running",
 		ConstLabels: prometheus.Labels{"command": commandName, "args": strings.Join(commandArgs, " "), "stdout": stdout, "stderr": stderr},
 	})
 	commandStatus := prometheus.NewGauge(prometheus.GaugeOpts{
-		Subsystem:   commandName,
+		Subsystem:   commandName + "_" + strings.Join(commandArgs, "_"),
 		Name:        "command_exit_with",
 		Help:        "return of the command's exit code.",
 		ConstLabels: prometheus.Labels{"command": commandName, "args": strings.Join(commandArgs, " "), "stdout": stdout, "stderr": stderr},
 	})
+	commandGlobalStatus := prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem:   "command",
+		Name:        "exit_with",
+		Help:        "return of the command's exit code..",
+		ConstLabels: prometheus.Labels{"command": commandName, "args": strings.Join(commandArgs, " "), "stdout": stdout, "stderr": stderr},
+	})
 
-	registry.MustRegister(commandStatus, commandDuration, commandErrors)
+	registry.MustRegister(commandStatus, commandDuration, commandErrors, commandGlobalStatus)
 
 	duration := time.Since(start).Seconds()
 
 	commandStatus.Set(float64(exit))
+	commandGlobalStatus.Set(float64(exit))
 	commandDuration.Set(duration)
 
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
