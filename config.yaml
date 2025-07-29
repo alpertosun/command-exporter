@@ -1,0 +1,8 @@
+stdout_limit: 100
+commands:
+  - name: process_count
+    command: ["cmd", "/C", "dir"]
+    interval: "10s"
+  - name: load_avg
+    command: ["cmd", "/C", "netstat"]
+    interval: "5s"
