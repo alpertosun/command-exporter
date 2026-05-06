@@ -1,6 +1,8 @@
 package collector
 
 import (
+	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 
@@ -9,24 +11,28 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func StartExporter(cfg *config.Config, stdoutLimit int) *http.Server {
+func StartExporter(ctx context.Context, cfg *config.Config) *http.Server {
 	for _, c := range cfg.Commands {
-		go executor.ScheduleCommand(c, stdoutLimit)
+		go executor.ScheduleCommand(ctx, c, cfg.StdoutLimit)
 	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
 
-	addr := ":9860" // default port
-	slog.Info("Listening", slog.String("addr", addr))
+	addr := cfg.ListenAddr
+	if addr == "" {
+		addr = ":9860"
+	}
 
 	server := &http.Server{
 		Addr:    addr,
 		Handler: mux,
 	}
 
+	slog.Info("Listening", slog.String("addr", addr))
+
 	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("HTTP server error", slog.Any("error", err))
 		}
 	}()
