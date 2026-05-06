@@ -1,3 +1,4 @@
+listen_addr: ":9860"
 stdout_limit: 100
 commands:
   - name: process_count
