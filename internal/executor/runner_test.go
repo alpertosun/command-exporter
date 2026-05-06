@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/alpertosun/command-exporter/internal/config"
@@ -9,7 +10,7 @@ import (
 func TestTrimAndTruncate(t *testing.T) {
 	input := "this string is over 50 characters long and should be truncated cleanly with no issues"
 	expected := input[:50] + "..."
-	got := trimAndTruncate(input)
+	got := trimAndTruncate(input, 50)
 	if got != expected {
 		t.Errorf("Expected '%s', got '%s'", expected, got)
 	}
@@ -22,6 +23,5 @@ func TestExecuteCommand_ValidOutput(t *testing.T) {
 		Interval: "1s",
 	}
 
-	// should not panic or error
-	execute(cmd)
+	execute(context.Background(), cmd, 50)
 }
